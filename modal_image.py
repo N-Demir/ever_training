@@ -57,10 +57,9 @@ image = (
     )
     # Add OptiX SDK and project code into the image, forcing build with copy=True
     .add_local_dir(local_path="optix", remote_path="/opt/OptiX_7.4", copy=True)
-    .add_local_dir(local_path=".", remote_path="/ever_training", copy=True, ignore=modal.FilePatternMatcher.from_file(".dockerignore"))
-    .run_commands("sh ignore_me.sh") # TODO: Remove, just for testing to see if changes to this file are causing the above line to rerun (they are! despite it being ignored)
+    .add_local_dir(local_path=".", remote_path="/root/ever_training", copy=True, ignore=modal.FilePatternMatcher.from_file(".dockerignore"))
     # Set the working directory for subsequent commands and function execution
-    .workdir("/ever_training")
+    .workdir("/root/ever_training")
     # Run the project's install script within the 'ever' env
     .run_commands(
         # Execute install.bash using conda run to ensure correct environment activation

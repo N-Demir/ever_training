@@ -9,9 +9,10 @@ import modal
 from modal_image import image
 
 # Can use the prebuilt image as well
+#from modal_image import image; image
 #modal.Image.from_registry("halfpotato/ever:latest", add_python="3.11")
 #modal.Image.from_dockerfile(Path(__file__).parent / "Dockerfile", add_python="3.11")
-app = modal.App("ever", image=image
+app = modal.App("ever", image=modal.Image.from_registry("halfpotato/ever:latest", add_python="3.12")
     # GCloud
     #TODO: Install gcloud
     .run_commands("apt-get update && apt-get install -y curl gnupg && \
@@ -32,15 +33,16 @@ app = modal.App("ever", image=image
         "mkdir -p /run/sshd" #, "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config", "echo 'root: ' | chpasswd" #TODO: uncomment this if the key approach doesn't work
     )
     .add_local_file(Path.home() / ".ssh/id_rsa.pub", "/root/.ssh/authorized_keys", copy=True)
-    # # VSCode
+    # # VSCode -- TODO: I don't think this actually works or does anything
     .run_commands("curl -fsSL https://code-server.dev/install.sh | sh")
     # # Add Conda (for some reason necessary for ssh-based code running)
     # .run_commands("conda init bash && echo 'conda activate base' >> ~/.bashrc")
     # Install and configure Git
-    .run_commands("apt-get install -y git")
-    .run_commands("git config pull.rebase true")
-    .run_commands("git config --global user.name 'Nikita Demir'")
-    .run_commands("git config --global user.email 'nikitde1@gmail.com'")
+    #TODO: Can't use these and the dockerhub image because there is no active git repository :()
+    # .run_commands("apt-get install -y git")
+    # .run_commands("git config pull.rebase true")
+    # .run_commands("git config --global user.name 'Nikita Demir'")
+    # .run_commands("git config --global user.email 'nikitde1@gmail.com'")
 )
 
 
