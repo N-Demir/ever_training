@@ -57,7 +57,9 @@ image = (
     )
     # Add OptiX SDK and project code into the image, forcing build with copy=True
     .add_local_dir(local_path="optix", remote_path="/opt/OptiX_7.4", copy=True)
-    .add_local_dir(local_path=".", remote_path="/root/ever_training", copy=True, ignore=modal.FilePatternMatcher.from_file(".dockerignore"))
+    # TODO: This has a bug unfortunately
+    # .add_local_dir(local_path=".", remote_path="/root/ever_training", copy=True, ignore=modal.FilePatternMatcher.from_file(".dockerignore"))
+    .add_local_dir(local_path=".", remote_path="/root/ever_training", copy=True, ignore=["modal_image.py", "modal_run.py"])
     # Set the working directory for subsequent commands and function execution
     .workdir("/root/ever_training")
     # Run the project's install script within the 'ever' env
