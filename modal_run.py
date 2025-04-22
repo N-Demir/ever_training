@@ -68,7 +68,7 @@ def wait_for_port(host, port, q):
     timeout=3600 * 24,
     gpu="T4",
     secrets=[modal.Secret.from_name("wandb-secret"), modal.Secret.from_name("github-token")],
-    volumes={"/root/.vscode-server": modal.Volume.from_name("vscode-server", create_if_missing=True), "/root/data": modal.Volume.from_name("ever-data", create_if_missing=True)}
+    volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), "/root/data": modal.Volume.from_name("ever-data", create_if_missing=True)}
 )
 def launch_ssh(q):
     with modal.forward(22, unencrypted=True) as tunnel:
