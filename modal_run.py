@@ -38,11 +38,13 @@ app = modal.App("ever", image=image #modal.Image.from_registry("halfpotato/ever:
     # # Add Conda (for some reason necessary for ssh-based code running)
     # .run_commands("conda init bash && echo 'conda activate base' >> ~/.bashrc")
     # Install and configure Git
-    #TODO: Can't use these and the dockerhub image because there is no active git repository :()
-    # .run_commands("apt-get install -y git")
-    # .run_commands("git config pull.rebase true")
-    # .run_commands("git config --global user.name 'Nikita Demir'")
-    # .run_commands("git config --global user.email 'nikitde1@gmail.com'")
+    .run_commands("apt-get install -y git")
+    .run_commands("git config --global pull.rebase true")
+    .run_commands("git config --global user.name 'Nikita Demir'")
+    .run_commands("git config --global user.email 'nikitde1@gmail.com'")
+    #
+    .workdir("/root/workdir")
+    .add_local_dir(Path(__file__).parent, "/root/workdir")
 )
 
 
@@ -66,7 +68,7 @@ def wait_for_port(host, port, q):
     timeout=3600 * 24,
     gpu="T4",
     secrets=[modal.Secret.from_name("wandb-secret"), modal.Secret.from_name("github-token")],
-    volumes={"/root/.vscode-server": modal.Volume.from_name("vscode-server", create_if_missing=True)}
+    volumes={"/root/.vscode-server": modal.Volume.from_name("vscode-server", create_if_missing=True), "/root/data": modal.Volume.from_name("ever-data", create_if_missing=True)}
 )
 def launch_ssh(q):
     with modal.forward(22, unencrypted=True) as tunnel:
@@ -78,6 +80,9 @@ def launch_ssh(q):
         subprocess.run("echo 'source ~/env_variables.sh' >> ~/.bashrc", shell=True)
 
         subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
+
+        # Setup
+        subprocess.run("gcloud storage cp gs://tour_storage/data/zipnerf/ ~/data/zipnerf/", shell=True)
 
 @app.local_entrypoint()
 def main():
