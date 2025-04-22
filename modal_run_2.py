@@ -10,9 +10,9 @@ from modal_image import image
 
 # Can use the prebuilt image as well
 #from modal_image import image; image
-#modal.Image.from_registry("halfpotato/ever:latest", add_python="3.11")
-#modal.Image.from_dockerfile(Path(__file__).parent / "Dockerfile", add_python="3.11")
-app = modal.App("ever", image=image #modal.Image.from_registry("halfpotato/ever:latest", add_python="3.12")
+#modal.Image.from_registry("halfpotato/ever:latest", add_python="3.12")
+#modal.Image.from_dockerfile(Path(__file__).parent / "Dockerfile", add_python="3.12")
+app = modal.App("ever-training", image=image
     # GCloud
     #TODO: Install gcloud
     .run_commands("apt-get update && apt-get install -y curl gnupg && \
@@ -33,9 +33,8 @@ app = modal.App("ever", image=image #modal.Image.from_registry("halfpotato/ever:
         "mkdir -p /run/sshd" #, "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config", "echo 'root: ' | chpasswd" #TODO: uncomment this if the key approach doesn't work
     )
     .add_local_file(Path.home() / ".ssh/id_rsa.pub", "/root/.ssh/authorized_keys", copy=True)
-
     # # Add Conda (for some reason necessary for ssh-based code running)
-    .run_commands("conda init bash")
+    .run_commands("/opt/conda/bin/conda init bash")
     # Install and configure Git
     .run_commands("apt-get install -y git")
     .run_commands("git config --global pull.rebase true")
@@ -71,7 +70,7 @@ def wait_for_port(host, port, q):
              "/root/data": modal.Volume.from_name("ever-data", create_if_missing=True),
              "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True)}
 )
-def launch_ssh(q):
+def launch_ssh_server(q):
     with modal.forward(22, unencrypted=True) as tunnel:
         host, port = tunnel.tcp_socket
         threading.Thread(target=wait_for_port, args=(host, port, q)).start()
@@ -89,17 +88,17 @@ def launch_ssh(q):
                 f.write(f'export {key}={escaped_value}\n')
         subprocess.run("echo 'source ~/env_variables.sh' >> ~/.bashrc", shell=True)
 
-        # Setup
-        subprocess.run("gcloud storage cp gs://tour_storage/data/zipnerf/ ~/data/zipnerf/", shell=True)
-
         subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
+        
+        # Since this is long running, it needs to be run after sshd so we don't timeout
+        subprocess.run("gcloud storage rsync -r gs://tour_storage/data/zipnerf/ ~/data/zipnerf/", shell=True)
 
 @app.local_entrypoint()
 def main():
     import sshtunnel
 
     with modal.Queue.ephemeral() as q:
-        launch_ssh.spawn(q)
+        launch_ssh_server.spawn(q)
         host, port = q.get()
         print(f"SSH server running at {host}:{port}")
 
