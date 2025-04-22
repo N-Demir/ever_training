@@ -33,18 +33,17 @@ app = modal.App("ever", image=image #modal.Image.from_registry("halfpotato/ever:
         "mkdir -p /run/sshd" #, "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config", "echo 'root: ' | chpasswd" #TODO: uncomment this if the key approach doesn't work
     )
     .add_local_file(Path.home() / ".ssh/id_rsa.pub", "/root/.ssh/authorized_keys", copy=True)
-    # # VSCode -- TODO: I don't think this actually works or does anything
-    .run_commands("curl -fsSL https://code-server.dev/install.sh | sh")
+
     # # Add Conda (for some reason necessary for ssh-based code running)
-    # .run_commands("conda init bash && echo 'conda activate base' >> ~/.bashrc")
+    .run_commands("conda init bash")
     # Install and configure Git
     .run_commands("apt-get install -y git")
     .run_commands("git config --global pull.rebase true")
     .run_commands("git config --global user.name 'Nikita Demir'")
     .run_commands("git config --global user.email 'nikitde1@gmail.com'")
     #
-    .workdir("/root/workdir")
-    .add_local_dir(Path(__file__).parent, "/root/workdir")
+    # .workdir("/root/workdir")
+    # .add_local_dir(Path(__file__).parent, "/root/workdir")
 )
 
 
@@ -68,7 +67,9 @@ def wait_for_port(host, port, q):
     timeout=3600 * 24,
     gpu="T4",
     secrets=[modal.Secret.from_name("wandb-secret"), modal.Secret.from_name("github-token")],
-    volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), "/root/data": modal.Volume.from_name("ever-data", create_if_missing=True)}
+    volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), 
+             "/root/data": modal.Volume.from_name("ever-data", create_if_missing=True),
+             "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True)}
 )
 def launch_ssh(q):
     with modal.forward(22, unencrypted=True) as tunnel:
@@ -76,13 +77,22 @@ def launch_ssh(q):
         threading.Thread(target=wait_for_port, args=(host, port, q)).start()
 
         # Added these commands to get the env variables that docker loads in through ENV to show up in my ssh
-        subprocess.run("env | awk '{print \"export \" $1}' > ~/env_variables.sh", shell=True)
-        subprocess.run("echo 'source ~/env_variables.sh' >> ~/.bashrc", shell=True)
+        import os
+        import shlex
+        from pathlib import Path
 
-        subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
+        output_file = Path.home() / "env_variables.sh"
+
+        with open(output_file, "w") as f:
+            for key, value in os.environ.items():
+                escaped_value = shlex.quote(value)
+                f.write(f'export {key}={escaped_value}\n')
+        subprocess.run("echo 'source ~/env_variables.sh' >> ~/.bashrc", shell=True)
 
         # Setup
         subprocess.run("gcloud storage cp gs://tour_storage/data/zipnerf/ ~/data/zipnerf/", shell=True)
+
+        subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
 
 @app.local_entrypoint()
 def main():

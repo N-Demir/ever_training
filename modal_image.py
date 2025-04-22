@@ -58,9 +58,9 @@ image = (
     # Add OptiX SDK and project code into the image, forcing build with copy=True
     .add_local_dir(local_path="optix", remote_path="/opt/OptiX_7.4", copy=True)
     .run_commands("apt-get install git")
-    .run_commands("git clone https://github.com/N-Demir/ever_training.git /root/ever_training --recurse-submodules")
+    .run_commands("git clone https://github.com/N-Demir/ever_training.git /ever_training --recurse-submodules")
     # Set the working directory for subsequent commands and function execution
-    .workdir("/root/ever_training")
+    .workdir("/ever_training")
     # Run the project's install script within the 'ever' env
     .run_commands(
         # Execute install.bash using conda run to ensure correct environment activation
