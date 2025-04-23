@@ -35,6 +35,7 @@ app = modal.App("ever-training", image=image
     .add_local_file(Path.home() / ".ssh/id_rsa.pub", "/root/.ssh/authorized_keys", copy=True)
     # # Add Conda (for some reason necessary for ssh-based code running)
     .run_commands("/opt/conda/bin/conda init bash")
+    .run_commands("source /opt/conda/etc/profile.d/conda.sh")
     # Install and configure Git
     .run_commands("apt-get install -y git")
     .run_commands("git config --global pull.rebase true")
@@ -67,7 +68,8 @@ def wait_for_port(host, port, q):
     gpu="T4",
     secrets=[modal.Secret.from_name("wandb-secret"), modal.Secret.from_name("github-token")],
     volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), 
-             "/root/data": modal.Volume.from_name("ever-data", create_if_missing=True),
+             "/root/data": modal.Volume.from_name("data", create_if_missing=True),
+             "/root/output": modal.Volume.from_name("output", create_if_missing=True),
              "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True)}
 )
 def launch_ssh_server(q):
@@ -91,7 +93,7 @@ def launch_ssh_server(q):
         subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
         
         # Since this is long running, it needs to be run after sshd so we don't timeout
-        subprocess.run("gcloud storage rsync -r gs://tour_storage/data/zipnerf/ ~/data/zipnerf/", shell=True)
+        subprocess.run("gcloud storage rsync -r gs://tour_storage/data/tandt/ ~/data/tandt/", shell=True)
 
 @app.local_entrypoint()
 def main():
