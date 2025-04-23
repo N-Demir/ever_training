@@ -26,6 +26,6 @@ pip install -e submodules/simple-knn
 # pwd
 # git status
 # git apply ../ever/new_files/sibr_patch.patch
-# cmake -Bbuild . -DCMAKE_BUILD_TYPE=Release
+# cmake -Bbuild . -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES="75"
 # cmake --build build -j24 --target install
 # cd ../..

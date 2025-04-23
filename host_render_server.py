@@ -34,6 +34,8 @@ import traceback
 from utils.system_utils import searchForMaxIteration
 import time
 from gaussian_renderer.fast_renderer import FastRenderer
+from gaussian_renderer.ever import splinerender
+from gaussian_renderer import network_gui
 
 renderFunc = splinerender
 # renderFunc = render
@@ -106,20 +108,20 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     iter_start = torch.cuda.Event(enable_timing = True)
     iter_end = torch.cuda.Event(enable_timing = True)
 
-
-    if dataset.enable_mip_splatting:
-        viewpoint_stack = scene.getTrainCameras().copy()
-        ema_loss_for_log = 0.0
-        progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
-        first_iter += 1
-        camera_inds = {view.uid: i for i, view in enumerate(viewpoint_stack)}
-        gaussians.initialize_glo(len(viewpoint_stack), dataset.glo_latent_dim)
-        train_cameras = scene.getTrainCameras()
-        gaussians.enable_mip_splatting(dataset.low_pass_2d_kernel_size, dataset.low_pass_3d_kernel_size)
-        gaussians.update_low_pass_filter(train_cameras)
+    #! Seems like mip splatting was remove at some point
+    # if dataset.enable_mip_splatting:
+    #     viewpoint_stack = scene.getTrainCameras().copy()
+    #     ema_loss_for_log = 0.0
+    #     progress_bar = tqdm(range(first_iter, opt.iterations), desc="Training progress")
+    #     first_iter += 1
+    #     camera_inds = {view.uid: i for i, view in enumerate(viewpoint_stack)}
+    #     gaussians.initialize_glo(len(viewpoint_stack), dataset.glo_latent_dim)
+    #     train_cameras = scene.getTrainCameras()
+    #     gaussians.enable_mip_splatting(dataset.low_pass_2d_kernel_size, dataset.low_pass_3d_kernel_size)
+    #     gaussians.update_low_pass_filter(train_cameras)
 
     gaussians.training_setup(opt)
-    dssim_growth = (opt.max_lambda_dssim - opt.lambda_dssim) / opt.max_dssim_iteration
+    # dssim_growth = (opt.max_lambda_dssim - opt.lambda_dssim) / opt.max_dssim_iteration
     torch.cuda.empty_cache()
     st = time.time()
 
@@ -128,6 +130,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
 
     while True:
         if network_gui.conn == None:
+            print("Waiting for connection...")
             network_gui.try_connect()
         while network_gui.conn != None:
             try:
