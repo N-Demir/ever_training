@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-import shlex
 import socket
 import subprocess
 import threading
@@ -13,7 +12,7 @@ from modal_image import image
 #from modal_image import image; image
 #modal.Image.from_registry("halfpotato/ever:latest", add_python="3.12")
 #modal.Image.from_dockerfile(Path(__file__).parent / "Dockerfile", add_python="3.12")
-app = modal.App("ever-training", image=image
+app = modal.App("ever-training", image=modal.Image.from_registry("halfpotato/ever:latest", add_python="3.12")
     # GCloud
     #TODO: Install gcloud
     .run_commands("apt-get update && apt-get install -y curl gnupg && \
@@ -41,36 +40,79 @@ app = modal.App("ever-training", image=image
     .run_commands("git config --global user.email 'nikitde1@gmail.com'")
 )
 
+
+LOCAL_PORT = 9090
+
+
+def wait_for_port(host, port, q):
+    start_time = time.monotonic()
+    while True:
+        try:
+            with socket.create_connection(("localhost", 22), timeout=30.0):
+                break
+        except OSError as exc:
+            time.sleep(0.01)
+            if time.monotonic() - start_time >= 30.0:
+                raise TimeoutError("Waited too long for port 22 to accept connections") from exc
+        q.put((host, port))
+
+
 @app.function(
     timeout=3600 * 24,
-    gpu="L40S",
+    gpu="T4",
     secrets=[modal.Secret.from_name("wandb-secret"), modal.Secret.from_name("github-token")],
     volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), 
              "/root/data": modal.Volume.from_name("data", create_if_missing=True),
              "/root/output": modal.Volume.from_name("output", create_if_missing=True),
              "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True)}
 )
-def run(experiment_script: str) -> None:
-    #! This is a joke. Thank god for conda run and fuck modal
-    #! Need conda absolute path
-    #! Need to use conda run to define what environment because conda init && activate are impossible to make work together
-    #! Need to use bash -c run a script that could have multiple lines
-    subprocess.run(f"cd ~/ever_training && /opt/conda/bin/conda run -n ever --no-capture-output bash -c {shlex.quote(experiment_script)}", shell=True)
+def launch_ssh_server(q):
+    with modal.forward(22, unencrypted=True) as tunnel:
+        host, port = tunnel.tcp_socket
+        threading.Thread(target=wait_for_port, args=(host, port, q)).start()
 
+        # Added these commands to get the env variables that docker loads in through ENV to show up in my ssh
+        import os
+        import shlex
+        from pathlib import Path
+
+        output_file = Path.home() / "env_variables.sh"
+
+        with open(output_file, "w") as f:
+            for key, value in os.environ.items():
+                escaped_value = shlex.quote(value)
+                f.write(f'export {key}={escaped_value}\n')
+        subprocess.run("echo 'source ~/env_variables.sh' >> ~/.bashrc", shell=True)
+
+        subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
+        
+        # Since this is long running, it needs to be run after sshd so we don't timeout
+        subprocess.run("gcloud storage rsync -r gs://tour_storage/data/tandt/ ~/data/tandt/", shell=True)
 
 @app.local_entrypoint()
-def main(experiment_path_str: str):
-    """Experiment path can be a directory or a file.
+def main():
+    import sshtunnel
 
-    If it's a directory, runs all the experiments in it in parallel.
-    If it's a file, runs the experiment specified by the file.
-    """
-    experiment_path = Path(experiment_path_str)
-    # If the experiment path is a directory, run all the experiments in it in parallel
-    if experiment_path.is_dir():
-        for experiment in experiment_path.iterdir():
-            modal_run = run.spawn(experiment.read_text().replace("\n", " && "))
-    else:
-        modal_run = run.spawn(experiment_path.read_text().replace("\n", " && "))
+    with modal.Queue.ephemeral() as q:
+        launch_ssh_server.spawn(q)
+        host, port = q.get()
+        print(f"SSH server running at {host}:{port}")
 
-    modal_run.get()
+        server = sshtunnel.SSHTunnelForwarder(
+            (host, port),
+            ssh_username="root",
+            ssh_password=" ",
+            remote_bind_address=("127.0.0.1", 22),
+            local_bind_address=("127.0.0.1", LOCAL_PORT),
+            allow_agent=False,
+        )
+
+        try:
+            server.start()
+            print(f"SSH tunnel forwarded to localhost:{server.local_bind_port}")
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\nShutting down SSH tunnel...")
+        finally:
+            server.stop()
