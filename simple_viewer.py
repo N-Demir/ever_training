@@ -64,7 +64,14 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
         if selected_3dgs is None:
             return np.zeros((height, width, 3))
         
-        view = MiniCam(width, height, camera_state.fov, camera_state.fov, 0, 1, c2w, K)
+        fovy = camera_state.fov  # Assuming camera_state.fov is the vertical FoV
+        aspect_ratio = width / float(height)
+        fovx = 2 * np.arctan(np.tan(fovy / 2.0) * aspect_ratio)
+        
+        view = MiniCam(width, height, fovx, fovy, 0, 1, viewmat, K)
+
+        # print("Values of the gaussians range from")
+        # print(selected_3dgs._xyz.min(), selected_3dgs._xyz.max()) # range from -10k to 10k (what the heck?!!!) That must be based on initialization and something we can check on
 
         #! Super hacky, but need to add some fields to the MiniCam class
         view.model = ProjectionType.PERSPECTIVE
