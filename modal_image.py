@@ -6,8 +6,8 @@ image = (
     .env({
         "DEBIAN_FRONTEND": "noninteractive",
         "OptiX_INSTALL_DIR": "/opt/OptiX_7.4",
-        "TORCH_CUDA_ARCH_LIST": "5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9",
-        "CUDAARCHS": "50 60 61 70 75 80 86 89",
+        "TORCH_CUDA_ARCH_LIST": "5.0;6.0;6.1;7.0;7.5;8.0;8.6",
+        "CUDAARCHS": "50 60 61 70 75 80 86",
         "LD_LIBRARY_PATH": "/slang_install/lib/", # From Dockerfile, check if slang install path matches
     })
     # Install system dependencies
