@@ -52,6 +52,10 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
 
     selected_3dgs = get_gaussian_model(dataset)
 
+    pitch_slider = server.gui.add_slider("Pitch", min=-180.0, max=180.0, step=0.1, initial_value=0.0)
+    roll_slider = server.gui.add_slider("Roll", min=-180.0, max=180.0, step=0.1, initial_value=0.0)
+    yaw_slider = server.gui.add_slider("Yaw", min=-180.0, max=180.0, step=0.1, initial_value=0.0)
+
     # register and open viewer
     @torch.no_grad()
     def viewer_render_fn(camera_state: nerfview.CameraState, img_wh: tuple[int, int]):
@@ -60,19 +64,39 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
         K = camera_state.get_K(img_wh)
         c2w = torch.from_numpy(c2w).float().to(device)
         K = torch.from_numpy(K).float().to(device)
-        viewmat = c2w.inverse()
+        # viewmat = c2w.inverse() # Original view matrix calculation
 
-        viewmat = torch.tensor([
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 0.0, 0.0, 1.0]
-        ], dtype=torch.float32, device=device)
-        
+        # Get slider values
+        pitch = math.radians(pitch_slider.value)
+        roll = math.radians(roll_slider.value)
+        yaw = math.radians(yaw_slider.value)
 
-        if selected_3dgs is None:
-            return np.zeros((height, width, 3))
-        
+        # Create rotation matrix from sliders (ZYX convention: Yaw, Pitch, Roll)
+        R_sliders_np = tf.SO3.from_rpy_radians(roll, pitch, yaw).as_matrix()
+        R_sliders = torch.from_numpy(R_sliders_np).float().to(device)
+
+        # Keep translation from original camera state
+        T = c2w[:3, 3]
+
+        # Construct new camera-to-world matrix using slider rotation and original translation
+        c2w_new = torch.eye(4, device=device, dtype=torch.float32)
+        c2w_new[:3, :3] = R_sliders
+        c2w_new[:3, 3] = T
+
+        # Calculate new view matrix
+        viewmat = c2w_new.inverse()
+
+        # # Apply 45-degree rotation around Y-axis
+        # angle_rad = math.pi / 4.0
+        # cos_a = math.cos(angle_rad)
+        # sin_a = math.sin(angle_rad)
+        # viewmat = torch.tensor([
+        #     [cos_a, 0.0, sin_a, 0.0],
+        #     [0.0,   1.0, 0.0,   0.0],
+        #     [-sin_a,0.0, cos_a, -2500.0],
+        #     [0.0,   0.0, 0.0,   1.0]
+        # ], dtype=torch.float32, device=device)
+
         fovy = camera_state.fov  # Assuming camera_state.fov is the vertical FoV
         aspect_ratio = width / float(height)
         fovx = 2 * np.arctan(np.tan(fovy / 2.0) * aspect_ratio)
@@ -80,6 +104,7 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
         # Calculate projection matrix
         projection_matrix = getProjectionMatrix(znear=0.01, zfar=100.0, fovX=fovx, fovY=fovy).transpose(0,1).to(device) # Using default znear/zfar from Camera class
         full_proj_transform = viewmat @ projection_matrix
+    
         
         view = MiniCam(width, height, fovy, fovx, 0.01, 100.0, viewmat, full_proj_transform) # Pass full_proj_transform and use actual znear/zfar
 
