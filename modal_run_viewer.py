@@ -38,6 +38,11 @@ app = modal.App("ever-training", image=modal.Image.from_registry("halfpotato/eve
     .run_commands("git config --global pull.rebase true")
     .run_commands("git config --global user.name 'Nikita Demir'")
     .run_commands("git config --global user.email 'nikitde1@gmail.com'")
+    .add_local_file(local_path="viewer_requirements.txt", remote_path="/viewer_requirements.txt", copy=True)
+    .run_commands(
+        # Install packages from requirements.txt within the 'ever' environment
+        "/opt/conda/bin/conda run -n ever pip install -r /viewer_requirements.txt",
+    )
 )
 
 

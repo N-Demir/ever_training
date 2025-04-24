@@ -34,11 +34,7 @@ import viser
 import viser.transforms as tf
 
 
-def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
-    torch.manual_seed(42)
-    device = torch.device("cuda", 0)
-    server = viser.ViserServer(port=port, verbose=False)
-
+def get_gaussian_model(dataset: ModelParams) -> GaussianModel:
     selected_3dgs = GaussianModel(dataset.sh_degree, dataset.use_neural_network, dataset.max_opacity)
 
     loaded_iter = searchForMaxIteration(os.path.join(dataset.model_path, "point_cloud"))
@@ -47,10 +43,14 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
                                                     "point_cloud",
                                                     "iteration_" + str(loaded_iter),
                                                     "point_cloud.ply"))
+    return selected_3dgs
 
-    print("Loaded 3DGS")
-    print(dataset.model_path)
-    print(selected_3dgs._xyz.shape)
+def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
+    torch.manual_seed(42)
+    device = torch.device("cuda", 0)
+    server = viser.ViserServer(port=port, verbose=False)
+
+    selected_3dgs = get_gaussian_model(dataset)
 
     # register and open viewer
     @torch.no_grad()
@@ -61,6 +61,14 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
         c2w = torch.from_numpy(c2w).float().to(device)
         K = torch.from_numpy(K).float().to(device)
         viewmat = c2w.inverse()
+
+        viewmat = torch.tensor([
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0]
+        ], dtype=torch.float32, device=device)
+        
 
         if selected_3dgs is None:
             return np.zeros((height, width, 3))
