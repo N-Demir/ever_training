@@ -25,6 +25,7 @@ from scene.dataset_readers import ProjectionType
 from scene.gaussian_model import GaussianModel
 from utils.system_utils import searchForMaxIteration
 from read_write_model import read_images_binary
+from utils.graphics_utils import getProjectionMatrix
 
 from gaussian_renderer.fast_renderer import FastRenderer
 from gaussian_renderer.ever import splinerender
@@ -68,7 +69,11 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
         aspect_ratio = width / float(height)
         fovx = 2 * np.arctan(np.tan(fovy / 2.0) * aspect_ratio)
         
-        view = MiniCam(width, height, fovx, fovy, 0, 1, viewmat, K)
+        # Calculate projection matrix
+        projection_matrix = getProjectionMatrix(znear=0.01, zfar=100.0, fovX=fovx, fovY=fovy).transpose(0,1).to(device) # Using default znear/zfar from Camera class
+        full_proj_transform = viewmat @ projection_matrix
+        
+        view = MiniCam(width, height, fovy, fovx, 0.01, 100.0, viewmat, full_proj_transform) # Pass full_proj_transform and use actual znear/zfar
 
         # print("Values of the gaussians range from")
         # print(selected_3dgs._xyz.min(), selected_3dgs._xyz.max()) # range from -10k to 10k (what the heck?!!!) That must be based on initialization and something we can check on
