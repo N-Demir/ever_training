@@ -49,7 +49,7 @@ image = (
          # Install cmake via pip (as in Dockerfile)
          "/opt/conda/bin/conda run -n ever pip install --no-cache-dir 'cmake<4'",
     )
-    # Add requirements.txt and install dependencies into the 'ever' env, forcing build with copy=True
+    # Add requirements.txt and install dependencies into the 'ever' env
     .add_local_file(local_path="requirements.txt", remote_path="/requirements.txt", copy=True)
     .run_commands(
         # Install packages from requirements.txt within the 'ever' environment
@@ -59,6 +59,7 @@ image = (
     .add_local_dir(local_path="optix", remote_path="/opt/OptiX_7.4", copy=True)
     .run_commands("apt-get install git")
     .run_commands("git clone https://github.com/N-Demir/ever_training.git /ever_training --recurse-submodules")
+
     # Set the working directory for subsequent commands and function execution
     .workdir("/ever_training")
     # Run the project's install script within the 'ever' env

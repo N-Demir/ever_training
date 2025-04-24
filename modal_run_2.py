@@ -33,9 +33,6 @@ app = modal.App("ever-training", image=image
         "mkdir -p /run/sshd" #, "echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config", "echo 'root: ' | chpasswd" #TODO: uncomment this if the key approach doesn't work
     )
     .add_local_file(Path.home() / ".ssh/id_rsa.pub", "/root/.ssh/authorized_keys", copy=True)
-    # # Add Conda (for some reason necessary for ssh-based code running)
-    .run_commands("/opt/conda/bin/conda init bash")
-    .run_commands("source /opt/conda/etc/profile.d/conda.sh")
     # Install and configure Git
     .run_commands("apt-get install -y git")
     .run_commands("git config --global pull.rebase true")
@@ -44,6 +41,11 @@ app = modal.App("ever-training", image=image
     #
     # .workdir("/root/workdir")
     # .add_local_dir(Path(__file__).parent, "/root/workdir")
+    .add_local_file(local_path="viewer_requirements.txt", remote_path="/viewer_requirements.txt", copy=True)
+    .run_commands(
+        # Install packages from requirements.txt within the 'ever' environment
+        "/opt/conda/bin/conda run -n ever pip install -r /viewer_requirements.txt",
+    )
 )
 
 
@@ -92,8 +94,6 @@ def launch_ssh_server(q):
 
         subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
         
-        # Since this is long running, it needs to be run after sshd so we don't timeout
-        subprocess.run("gcloud storage rsync -r gs://tour_storage/data/tandt/ ~/data/tandt/", shell=True)
 
 @app.local_entrypoint()
 def main():
