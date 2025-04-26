@@ -35,6 +35,7 @@ import viser.transforms as tf
 
 
 def get_gaussian_model(dataset: ModelParams) -> GaussianModel:
+    print("Getting Gaussian Model for dataset: ", dataset.model_path)
     selected_3dgs = GaussianModel(dataset.sh_degree, dataset.use_neural_network, dataset.max_opacity)
 
     loaded_iter = searchForMaxIteration(os.path.join(dataset.model_path, "point_cloud"))
@@ -43,6 +44,7 @@ def get_gaussian_model(dataset: ModelParams) -> GaussianModel:
                                                     "point_cloud",
                                                     "iteration_" + str(loaded_iter),
                                                     "point_cloud.ply"))
+    print("Loaded Gaussian Model")
     return selected_3dgs
 
 def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
