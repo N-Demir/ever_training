@@ -70,6 +70,8 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
         fovy = camera_state.fov  # Assuming camera_state.fov is the vertical FoV
         aspect_ratio = width / float(height)
         fovx = 2 * np.arctan(np.tan(fovy / 2.0) * aspect_ratio)
+
+        viewmat = viewmat.T
         
         # Calculate projection matrix
         projection_matrix = getProjectionMatrix(znear=0.01, zfar=100.0, fovX=fovx, fovY=fovy).transpose(0,1).to(device) # Using default znear/zfar from Camera class
