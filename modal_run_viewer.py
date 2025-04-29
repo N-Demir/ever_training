@@ -43,6 +43,23 @@ app = modal.App("ever-training", image=modal.Image.from_registry("halfpotato/eve
         # Install packages from requirements.txt within the 'ever' environment
         "/opt/conda/bin/conda run -n ever pip install -r /viewer_requirements.txt",
     )
+    ### Viewer installation instructions
+    .run_commands(
+        # Chain all nvm/node/yarn related commands in one shell session
+        # Export NVM_DIR, create dir, install nvm, source it, install node, setup yarn, use node
+        (
+            'export NVM_DIR="$HOME/.nvm" && '
+            'mkdir -p "$NVM_DIR" && '
+            'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && '
+            '[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh" && '  # Source nvm
+            'nvm install 23.9.0 && '
+            'corepack prepare yarn@4.7.0 --activate && '
+            'nvm use v23.9.0 && corepack enable'
+        ),
+        # Uninstall viser installed via pip earlier, if needed (runs in a separate shell)
+        "/opt/conda/bin/conda run -n ever pip uninstall -y viser",
+    )
+    .add_local_file("startup_install.sh", "/root/startup_install.sh", copy=True)
 )
 
 
@@ -69,14 +86,13 @@ def wait_for_port(host, port, q):
     volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), 
              "/root/data": modal.Volume.from_name("data", create_if_missing=True),
              "/root/output": modal.Volume.from_name("output", create_if_missing=True),
-             "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True)}
+             "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True),
+             "/root/viser": modal.Volume.from_name("viser", create_if_missing=True)}
 )
 def launch_ssh_server(q):
     with modal.forward(22, unencrypted=True) as tunnel:
-        host, port = tunnel.tcp_socket
-        threading.Thread(target=wait_for_port, args=(host, port, q)).start()
-
-        # Added these commands to get the env variables that docker loads in through ENV to show up in my ssh
+        ### Startup Commands
+        # Set env vars
         import os
         import shlex
         from pathlib import Path
@@ -89,10 +105,13 @@ def launch_ssh_server(q):
                 f.write(f'export {key}={escaped_value}\n')
         subprocess.run("echo 'source ~/env_variables.sh' >> ~/.bashrc", shell=True)
 
+        # Install whatever is needed at startup
+        subprocess.run("bash /root/startup_install.sh", shell=True)
+        ### End Startup Commands
+
+        host, port = tunnel.tcp_socket
+        threading.Thread(target=wait_for_port, args=(host, port, q)).start()
         subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
-        
-        # Since this is long running, it needs to be run after sshd so we don't timeout
-        subprocess.run("gcloud storage rsync -r gs://tour_storage/data/tandt/ ~/data/tandt/", shell=True)
 
 @app.local_entrypoint()
 def main():

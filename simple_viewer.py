@@ -13,6 +13,8 @@ import subprocess
 import time
 
 import imageio
+from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 from arguments import GroupParams, ModelParams, PipelineParams
 import nerfview
 import numpy as np
@@ -47,12 +49,33 @@ def get_gaussian_model(dataset: ModelParams) -> GaussianModel:
     print("Loaded Gaussian Model")
     return selected_3dgs
 
+
+def generate_histogram_of_gaussian_positions(selected_3dgs: GaussianModel) -> Figure:
+    """Generates a histogram of the X-coordinates of Gaussian positions."""
+    positions = selected_3dgs._xyz.cpu().numpy() # Get data, move to CPU if needed, convert to numpy
+
+    # 1. Create a figure and axes explicitly
+    fig, ax = plt.subplots()
+
+    # 2. Plot onto the specific axes
+    ax.hist(positions[:, 0], bins=100)
+    ax.set_title("Histogram of Gaussian X-Positions")
+    ax.set_xlabel("X-Coordinate")
+    ax.set_ylabel("Frequency")
+
+    # 3. Return the figure object containing the plot
+    return fig
+
+
+
 def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
     torch.manual_seed(42)
     device = torch.device("cuda", 0)
     server = viser.ViserServer(port=port, verbose=False)
 
     selected_3dgs = get_gaussian_model(dataset)
+
+    server.gui.add_plotly(generate_histogram_of_gaussian_positions(selected_3dgs)) # type: ignore # viser's go.Figure is different from matplotlib's Figure
 
     # register and open viewer
     @torch.no_grad()
