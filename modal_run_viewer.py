@@ -12,7 +12,7 @@ from modal_image import image
 #from modal_image import image; image
 #modal.Image.from_registry("halfpotato/ever:latest", add_python="3.12")
 #modal.Image.from_dockerfile(Path(__file__).parent / "Dockerfile", add_python="3.12")
-app = modal.App("ever-training", image=modal.Image.from_registry("halfpotato/ever:latest", add_python="3.12")
+app = modal.App("ever-training", image=image
     # GCloud
     #TODO: Install gcloud
     .run_commands("apt-get update && apt-get install -y curl gnupg && \
