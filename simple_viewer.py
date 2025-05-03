@@ -13,8 +13,8 @@ import subprocess
 import time
 
 import imageio
-from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
+import plotly.express as px
+import plotly.graph_objects as go
 from arguments import GroupParams, ModelParams, PipelineParams
 import nerfview
 import numpy as np
@@ -50,20 +50,22 @@ def get_gaussian_model(dataset: ModelParams) -> GaussianModel:
     return selected_3dgs
 
 
-def generate_histogram_of_gaussian_positions(selected_3dgs: GaussianModel) -> Figure:
-    """Generates a histogram of the X-coordinates of Gaussian positions."""
-    positions = selected_3dgs._xyz.cpu().numpy() # Get data, move to CPU if needed, convert to numpy
+def generate_histogram_of_gaussian_positions(selected_3dgs: GaussianModel) -> go.Figure:
+    """Generates a histogram of the X-coordinates of Gaussian positions using Plotly Express."""
+    positions = selected_3dgs._xyz.detach().cpu().numpy() # Get data, move to CPU if needed, convert to numpy
 
-    # 1. Create a figure and axes explicitly
-    fig, ax = plt.subplots()
+    # Create histogram using Plotly Express
+    fig = px.histogram(
+        x=positions[:, 0], 
+        nbins=100,
+        title="Histogram of Gaussian X-Positions",
+        labels={'x': "X-Coordinate"} # Renames the auto-generated 'x' axis label
+        # 'frequency' label for y-axis is automatic
+    )
 
-    # 2. Plot onto the specific axes
-    ax.hist(positions[:, 0], bins=100)
-    ax.set_title("Histogram of Gaussian X-Positions")
-    ax.set_xlabel("X-Coordinate")
-    ax.set_ylabel("Frequency")
+    # Update layout for better appearance if needed (optional)
+    # fig.update_layout(yaxis_title="Frequency") 
 
-    # 3. Return the figure object containing the plot
     return fig
 
 
@@ -75,7 +77,7 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
 
     selected_3dgs = get_gaussian_model(dataset)
 
-    server.gui.add_plotly(generate_histogram_of_gaussian_positions(selected_3dgs)) # type: ignore # viser's go.Figure is different from matplotlib's Figure
+    server.gui.add_plotly(generate_histogram_of_gaussian_positions(selected_3dgs))
 
     # register and open viewer
     @torch.no_grad()

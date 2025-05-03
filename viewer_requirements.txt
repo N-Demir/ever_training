@@ -2,3 +2,5 @@ git+https://github.com/N-Demir/viser
 nerfview==0.0.3
 imageio[ffmpeg]
 matplotlib
+plotly
+pandas
