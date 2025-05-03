@@ -49,35 +49,12 @@ def get_gaussian_model(dataset: ModelParams) -> GaussianModel:
     print("Loaded Gaussian Model")
     return selected_3dgs
 
-
-def generate_histogram_of_gaussian_positions(selected_3dgs: GaussianModel) -> go.Figure:
-    """Generates a histogram of the X-coordinates of Gaussian positions using Plotly Express."""
-    positions = selected_3dgs._xyz.detach().cpu().numpy() # Get data, move to CPU if needed, convert to numpy
-
-    # Create histogram using Plotly Express
-    fig = px.histogram(
-        x=positions[:, 0], 
-        nbins=100,
-        title="Histogram of Gaussian X-Positions",
-        labels={'x': "X-Coordinate"} # Renames the auto-generated 'x' axis label
-        # 'frequency' label for y-axis is automatic
-    )
-
-    # Update layout for better appearance if needed (optional)
-    # fig.update_layout(yaxis_title="Frequency") 
-
-    return fig
-
-
-
 def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
     torch.manual_seed(42)
     device = torch.device("cuda", 0)
     server = viser.ViserServer(port=port, verbose=False)
 
     selected_3dgs = get_gaussian_model(dataset)
-
-    server.gui.add_plotly(generate_histogram_of_gaussian_positions(selected_3dgs))
 
     # register and open viewer
     @torch.no_grad()

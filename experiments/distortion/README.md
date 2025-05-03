@@ -1,0 +1,1 @@
+Don't have the modal on hand but basically undistorted did better. Maybe like 1 or 2 psnr so somewhat significant.
