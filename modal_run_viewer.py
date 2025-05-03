@@ -44,22 +44,8 @@ app = modal.App("ever-training", image=image
         "/opt/conda/bin/conda run -n ever pip install -r /viewer_requirements.txt",
     )
     ### Viewer installation instructions
-    .run_commands(
-        # Chain all nvm/node/yarn related commands in one shell session
-        # Export NVM_DIR, create dir, install nvm, source it, install node, setup yarn, use node
-        (
-            'export NVM_DIR="$HOME/.nvm" && '
-            'mkdir -p "$NVM_DIR" && '
-            'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && '
-            '[ -s "$NVM_DIR/nvm.sh" ] && \\. "$NVM_DIR/nvm.sh" && '  # Source nvm
-            'nvm install 23.9.0 && '
-            'corepack prepare yarn@4.7.0 --activate && '
-            'nvm use v23.9.0 && corepack enable'
-        ),
-        # Uninstall viser installed via pip earlier, if needed (runs in a separate shell)
-        "/opt/conda/bin/conda run -n ever pip uninstall -y viser",
-    )
     .add_local_file("startup_install.sh", "/root/startup_install.sh", copy=True)
+    .run_commands("bash /root/startup_install.sh")
 )
 
 
@@ -87,7 +73,8 @@ def wait_for_port(host, port, q):
              "/root/data": modal.Volume.from_name("data", create_if_missing=True),
              "/root/output": modal.Volume.from_name("output", create_if_missing=True),
              "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True),
-             "/root/viser": modal.Volume.from_name("viser", create_if_missing=True)}
+            #  "/root/viser": modal.Volume.from_name("viser", create_if_missing=True)
+             }
 )
 def launch_ssh_server(q):
     with modal.forward(22, unencrypted=True) as tunnel:
@@ -106,15 +93,15 @@ def launch_ssh_server(q):
         subprocess.run("echo 'source ~/env_variables.sh' >> ~/.bashrc", shell=True)
 
         # Install whatever is needed at startup
-        subprocess.run("bash /root/startup_install.sh", shell=True)
+        # subprocess.run("bash /root/startup_install.sh", shell=True)
         ### End Startup Commands
 
         host, port = tunnel.tcp_socket
         threading.Thread(target=wait_for_port, args=(host, port, q)).start()
         subprocess.run(["/usr/sbin/sshd", "-D"])  # TODO: I don't know why I need to start this here
 
-@app.local_entrypoint()
-def main():
+
+def start_server():
     import sshtunnel
 
     with modal.Queue.ephemeral() as q:
@@ -140,3 +127,29 @@ def main():
             print("\nShutting down SSH tunnel...")
         finally:
             server.stop()
+
+@app.function(
+    timeout=3600 * 24,
+    gpu="T4",
+    secrets=[modal.Secret.from_name("wandb-secret"), modal.Secret.from_name("github-token")],
+    volumes={
+             "/root/data": modal.Volume.from_name("data", create_if_missing=True),
+             "/root/output": modal.Volume.from_name("output", create_if_missing=True),
+             "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True),
+             }
+)
+def start_viewer():
+    with modal.forward(8888) as tunnel:
+        subprocess.run(
+            "python simple_viewer.py -m ~/output/zipnerf_nyc_ever/ --port 8888",
+            shell=True,
+        )
+        print("Server listening at", tunnel.url)
+
+
+@app.local_entrypoint()
+def main(server: bool = False):
+    if server:
+        start_server()
+    
+    start_viewer.remote()
