@@ -1,3 +1,9 @@
+Create an experiment in `experiment/`
+
+
+
+# Old Notes
+
 # Exact Volumetric Ellipsoid Rendering for Real-time View Synthesis
 This is the repository with changes to 3DGS's training code to use the EVER rendering method.
 

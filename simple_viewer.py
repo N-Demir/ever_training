@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import math
 import os
 import subprocess
+import sys
 import time
 
 import imageio
@@ -54,7 +55,9 @@ def main(dataset: ModelParams, pp: GroupParams, port: int = 8080):
     device = torch.device("cuda", 0)
     server = viser.ViserServer(port=port, verbose=False)
 
+    print("Loading model: ", dataset.model_path)
     selected_3dgs = get_gaussian_model(dataset)
+    print("Model loaded!")
 
     # register and open viewer
     @torch.no_grad()
@@ -120,6 +123,11 @@ if __name__ == "__main__":
     parser.add_argument("--port", type=int, default=8083, help="port for the viewer server")
     args = parser.parse_args()
     assert args.scene_grid % 2 == 1, "scene_grid must be odd"
+    
+    # TODO: These only get outputted when the thing crashes. Same with warnings I was getting elsewhere? so confused why.... It's almost like python stuff is not getting outputted, despite me turning off buffering with -u?
+    # print to stderr
+    print("Im so glad to be running!!", file=sys.stderr)
+    raise Exception("Stop here")
 
     # cli(main, args, verbose=True)
     main(dataset.extract(args), pp.extract(args), args.port)

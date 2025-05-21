@@ -3,6 +3,8 @@ set -e
 
 # Commands that need to be run by modal at runtime (usually because they require a volume)
 # We don't need the volume though, so when this works we should be able to fold it into the image itself
+cd /root
+git clone https://github.com/N-Demir/viser.git
 
 cd /root/viser
 /opt/conda/bin/conda run -n ever pip uninstall -y viser
@@ -21,5 +23,5 @@ corepack enable
 
 yarn install && yarn build
 
-git pull
+cd /root/viser
 /opt/conda/bin/conda run -n ever pip install -e .

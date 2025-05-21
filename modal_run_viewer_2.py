@@ -46,6 +46,10 @@ app = modal.App("ever-training", image=image
     ### Viewer installation instructions
     .add_local_file("startup_install.sh", "/root/startup_install.sh", copy=True)
     .run_commands("bash /root/startup_install.sh")
+    ### Add the local viewer and ever code
+    # TODO: May not work because its missing the build things, so maybe this needs to be added to root and overwritten
+    .workdir("/ever_training")
+    .add_local_dir(".", "/ever_training")
 )
 
 
@@ -72,7 +76,7 @@ def wait_for_port(host, port, q):
     volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), 
              "/root/data": modal.Volume.from_name("data", create_if_missing=True),
              "/root/output": modal.Volume.from_name("output", create_if_missing=True),
-             "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True),
+            #  "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True),
             #  "/root/viser": modal.Volume.from_name("viser", create_if_missing=True)
              }
 )
@@ -135,16 +139,19 @@ def start_server():
     volumes={
              "/root/data": modal.Volume.from_name("data", create_if_missing=True),
              "/root/output": modal.Volume.from_name("output", create_if_missing=True),
-             "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True),
+            #  "/root/ever_training": modal.Volume.from_name("ever-training", create_if_missing=True),
              }
 )
 def start_viewer():
     with modal.forward(8888) as tunnel:
+        print("Viewer will run at")
+        print(tunnel.url)
+        print("Starting up will take like a minute or more")
+
         subprocess.run(
-            "python simple_viewer.py -m ~/output/zipnerf_nyc_ever/ --port 8888",
+            "/opt/conda/bin/conda run -n ever python -u simple_viewer.py -m ~/output/zipnerf_nyc_ever/ --port 8888",
             shell=True,
         )
-        print("Server listening at", tunnel.url)
 
 
 @app.local_entrypoint()
