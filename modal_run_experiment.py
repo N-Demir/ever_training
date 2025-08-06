@@ -43,7 +43,7 @@ app = modal.App("ever-training", image=image
 
 @app.function(
     timeout=3600 * 24,
-    gpu="T4", # L40S complains for some reason
+    gpu="L40S", # L4, T4, L40S work
     secrets=[modal.Secret.from_name("wandb-secret"), modal.Secret.from_name("github-token")],
     volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), 
              "/root/data": modal.Volume.from_name("data", create_if_missing=True),

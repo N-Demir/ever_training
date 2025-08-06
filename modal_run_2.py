@@ -67,7 +67,7 @@ def wait_for_port(host, port, q):
 
 @app.function(
     timeout=3600 * 24,
-    gpu="T4",
+    gpu="L4",
     secrets=[modal.Secret.from_name("wandb-secret"), modal.Secret.from_name("github-token")],
     volumes={"/root/.cursor-server": modal.Volume.from_name("cursor-server", create_if_missing=True), 
              "/root/data": modal.Volume.from_name("data", create_if_missing=True),

@@ -124,11 +124,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     assert args.scene_grid % 2 == 1, "scene_grid must be odd"
     
-    # TODO: These only get outputted when the thing crashes. Same with warnings I was getting elsewhere? so confused why.... It's almost like python stuff is not getting outputted, despite me turning off buffering with -u?
-    # print to stderr
-    print("Im so glad to be running!!", file=sys.stderr)
-    raise Exception("Stop here")
-
-    # cli(main, args, verbose=True)
     main(dataset.extract(args), pp.extract(args), args.port)
 

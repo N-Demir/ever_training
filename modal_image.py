@@ -45,7 +45,7 @@ image = (
     # Install core Python packages (PyTorch, cmake) into the 'ever' env using pip via conda run
     .run_commands(
          # Ensure PyTorch is installed for the correct CUDA version
-         "/opt/conda/bin/conda run -n ever pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126",
+         "/opt/conda/bin/conda run -n ever pip install --no-cache-dir torch==2.6.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126",
          # Install cmake via pip (as in Dockerfile)
          "/opt/conda/bin/conda run -n ever pip install --no-cache-dir 'cmake<4'",
     )
