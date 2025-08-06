@@ -18,6 +18,7 @@ MODAL_VOLUMES = {
 
 app = modal.App("nvs-leaderboard-runner", 
                 image=modal.Image.from_dockerfile("Dockerfile")
+                .pip_install("aiohttp==3.9.1")
                 .apt_install("openssh-server")
                 .run_commands(
                     "mkdir -p /run/sshd"
