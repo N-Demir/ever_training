@@ -1,3 +1,4 @@
+from pathlib import Path
 from modal import Image
 
 image = (
@@ -41,7 +42,7 @@ image = (
             libglm-dev \
             && rm -rf /var/lib/apt/lists/*"
     )
-    .workdir("/root/workspace")
+    .workdir(f"/root/{Path.cwd().name}")
 
     ###### Your Code Here ######
     # Would recommend pulling the repo from github (we later overwrite it with the current local directory) 
