@@ -5,7 +5,7 @@ FROM pytorch/pytorch:2.6.0-cuda12.6-cudnn9-devel
 ENV DEBIAN_FRONTEND=noninteractive
 ENV OptiX_INSTALL_DIR=/opt/OptiX_7.4
 ENV TORCH_CUDA_ARCH_LIST=5.0;6.0;6.1;7.0;7.5;8.0;8.6;8.9
-ENV CUDAARCHS=50 60 61 70 75 80 86 89
+ENV CUDAARCHS=50;60;61;70;75;80;86;89
 ENV LD_LIBRARY_PATH=/slang_install/lib/
 
 # Install system dependencies

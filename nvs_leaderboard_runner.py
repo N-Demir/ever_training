@@ -32,7 +32,7 @@ app = modal.App(
         # Configure git
         .run_commands(f"git config --global user.name '{local_users_git_name}'")
         .run_commands(f"git config --global user.email '{local_users_git_email}'")
-
+        .run_commands("git remote set-url origin https://$GITHUB_TOKEN@github.com/$(git config --get remote.origin.url | sed -E 's#https://github.com/##')", secrets=[modal.Secret.from_name("github-token")])
         .run_commands("mkdir /run/sshd")
         .add_local_file(
             Path.home() / ".ssh/id_rsa.pub", "/root/.ssh/authorized_keys"
