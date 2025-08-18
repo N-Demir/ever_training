@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Auto-detect repo name as method; fallback to current directory if not a git repo
 method_name="$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")"
