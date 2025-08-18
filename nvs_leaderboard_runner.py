@@ -5,7 +5,8 @@ import time
 from pathlib import Path, PurePosixPath
 
 import modal
-from nvs_leaderboard_image import image
+# from nvs_leaderboard_image import image
+from modal_image import image
 
 nvs_leaderboard_data_volume = modal.Volume.from_name("nvs-leaderboard-data", create_if_missing=True)
 nvs_leaderboard_output_volume = modal.Volume.from_name("nvs-leaderboard-output", create_if_missing=True)
