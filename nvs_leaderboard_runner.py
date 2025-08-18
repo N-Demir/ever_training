@@ -27,8 +27,9 @@ app = modal.App(
     image=(
         # If you've already got a Dockerfile, just replace image with:
         # modal.Image.from_dockerfile("Dockerfile")
+        image
         # Install dev-env dependencies
-        image.apt_install("openssh-server", "wget", "unzip", "git")
+        # .apt_install("openssh-server", "wget", "unzip", "git")
         # Configure git
         .run_commands(f"git config --global user.name '{local_users_git_name}'")
         .run_commands(f"git config --global user.email '{local_users_git_email}'")

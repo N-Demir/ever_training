@@ -88,6 +88,7 @@ image = (
     )
     # Project install
     .run_commands(
-        "bash install.bash"
+        "bash install.bash",
+        gpu="T4"
     )
 )
