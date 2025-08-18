@@ -23,13 +23,20 @@ start_time=$(date +%s)
 
 ######## START OF YOUR CODE ########
 # Train using the train split in the dataset folder
-# eg: python train.py --data /nvs-leaderboard-data/$scene/train --output /nvs-leaderboard-output/$scene/$method_name/
+# eg: python train.py --data /nvs-leaderboard-data/$scene --output /nvs-leaderboard-output/$scene/$method_name/
+
+# TODO: For zipnerf/alameda, should use GLO args to be comparable to zipnerf
+python train.py -s /nvs-leaderboard-data/$scene -m /nvs-leaderboard-output/$scene/$method_name/ --eval --test_iterations -1 --iterations 10
 
 # Render the test split
-# eg: python render.py --data /nvs-leaderboard-data/$scene/test --output /nvs-leaderboard-output/$scene/$method_name/ 
+# eg: python render.py --data /nvs-leaderboard-data/$scene --output /nvs-leaderboard-output/$scene/$method_name/ 
+
+python render.py -s /nvs-leaderboard-data/$scene -m /nvs-leaderboard-output/$scene/$method_name/ --eval
 
 # At the end, move your renders into the `expected_output_folder`
 # eg: mv /nvs-leaderboard-output/$scene/$method_name/test/ours_30000/renders $expected_output_folder
+
+mv /nvs-leaderboard-output/$scene/$method_name/test/ours_10/renders $expected_output_folder
 ######## END OF YOUR CODE ########
 
 # Record end time and show duration
