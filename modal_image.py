@@ -23,6 +23,10 @@ image = (
         "bash miniconda.sh -b -p /opt/conda",
         "rm miniconda.sh",
         "/opt/conda/bin/conda init bash", # Initialize conda for bash shell
+        # Accept Anaconda channel Terms of Service non-interactively to avoid build failures
+        "/opt/conda/bin/conda config --add channels defaults",
+        "/opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main",
+        "/opt/conda/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r",
         "/opt/conda/bin/conda update -n base -c defaults conda -y",
         "/opt/conda/bin/conda create -n ever python=3.10 -y",
         "/opt/conda/bin/conda clean -ya",
