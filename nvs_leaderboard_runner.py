@@ -6,7 +6,7 @@ from pathlib import Path, PurePosixPath
 
 import modal
 # from nvs_leaderboard_image import image
-from modal_image import image
+# from modal_image import image
 
 nvs_leaderboard_data_volume = modal.Volume.from_name("nvs-leaderboard-data", create_if_missing=True)
 nvs_leaderboard_output_volume = modal.Volume.from_name("nvs-leaderboard-output", create_if_missing=True)
@@ -28,19 +28,22 @@ app = modal.App(
     image=(
         # If you've already got a Dockerfile, just replace image with:
         # modal.Image.from_dockerfile("Dockerfile")
-        image
+        modal.Image.from_registry("halfpotato/ever:latest")
+        # image
         # Install dev-env dependencies
-        # .apt_install("openssh-server", "wget", "unzip", "git")
+        .apt_install("openssh-server", "wget", "unzip", "git")
         # Configure git
         .run_commands(f"git config --global user.name '{local_users_git_name}'")
         .run_commands(f"git config --global user.email '{local_users_git_email}'")
         .run_commands("git remote set-url origin https://$GITHUB_TOKEN@github.com/$(git config --get remote.origin.url | sed -E 's#https://github.com/##')", secrets=[modal.Secret.from_name("github-token")])
         .run_commands("mkdir /run/sshd")
+        # Ever training specific installs
+        .run_commands("/opt/conda/bin/conda run -n ever pip install tensorly")
         .add_local_file(
             Path.home() / ".ssh/id_rsa.pub", "/root/.ssh/authorized_keys"
         )  # If you don't have this keyfile locally, generate it with: ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
         # This overwrites the git cloned repo (used for install) with the current local directory
-        .add_local_dir(Path.cwd(), f"/root/{Path.cwd().name}")
+        .add_local_dir(Path.cwd(), "/ever_training")
     ),
     volumes=MODAL_VOLUMES,
     secrets=[modal.Secret.from_name("github-token")],
