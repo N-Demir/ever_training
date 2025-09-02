@@ -17,3 +17,8 @@ output_folder=$2
 #   python render.py --data $data_folder/test --output $output_folder --eval
 # 3) Move the renders into `$output_folder/test_renders`
 #   mv $output_folder/test/ours_30000/renders $output_folder/test_renders
+
+# TODO: For zipnerf/alameda, should use GLO args to be comparable to zipnerf
+/opt/conda/bin/conda run -n ever python train.py -s $data_folder -m $output_folder --eval --test_iterations -1 --iterations 30000
+/opt/conda/bin/conda run -n ever python render.py -s $data_folder -m $output_folder --eval --iteration 30000
+mv $output_folder/test/ours_30000/renders $output_folder/test_renders

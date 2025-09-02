@@ -17,17 +17,7 @@ modal_volumes: dict[str | PurePosixPath, Volume] = {
 }
 
 image = (
-    Image.from_registry("pytorch/pytorch:2.4.1-cuda12.1-cudnn9-devel")
-    .env(
-        {
-            # Set Torch CUDA Compatbility to be for RTX 4090, T4, L40s, and A100
-            # If using a different GPU, make sure its torch cuda architecture version is added to the list
-            "TORCH_CUDA_ARCH_LIST": "7.5;8.0;8.9;9.0",
-            # Set environment variable to avoid interactive prompts from installing packages
-            "DEBIAN_FRONTEND": "noninteractive",
-            "TZ": "America/New_York",
-        }
-    )
+    Image.from_registry("halfpotato/ever:latest")
     # Install git and various other helper dependencies
     .run_commands(
         "apt-get update && apt-get install -y \
@@ -64,15 +54,8 @@ image = (
     )
     # For tracking GPU usage
     .run_commands("pip install gpu_tracker")
-    # Set the working dir
-    .workdir(f"/root/{method_name}")
-    ######## START OF YOUR CODE ########
-    # Probably easiest to pull the repo from github, but you can also copy files from your local machine with .add_local_dir()
-    # eg: .run_commands("git clone -b nvs-bench https://github.com/N-Demir/gaussian-splatting.git --recursive .")
-    # Install (avoid conda installs because they don't work well in dockerfile situations)
-    # Separating these on separate lines helps if there are errors (previous lines will be cached) especially on the large package installs
-    # eg:
-    # .run_commands("pip install submodules/diff-gaussian-rasterization")
-    # .run_commands("pip install -e .")
-    # Note: If your run_commands step needs access to a gpu it's actually possible to do that through "run_commands(gpu='L40S', ...)"
+    # Install Ever training
+    .workdir("/ever_training")
+    .run_commands("/opt/conda/bin/conda run -n ever pip install tensorly")
+    .add_local_dir(Path.cwd(), "/ever_training")
 )
