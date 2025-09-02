@@ -5,11 +5,11 @@ import time
 from pathlib import Path, PurePosixPath
 
 import modal
-# from nvs_leaderboard_image import image
+# from nvs_bench_image import image
 # from modal_image import image
 
-nvs_leaderboard_data_volume = modal.Volume.from_name("nvs-leaderboard-data", create_if_missing=True)
-nvs_leaderboard_output_volume = modal.Volume.from_name("nvs-leaderboard-output", create_if_missing=True)
+nvs_bench_data_volume = modal.Volume.from_name("nvs-bench-data", create_if_missing=True)
+nvs_bench_output_volume = modal.Volume.from_name("nvs-bench-output", create_if_missing=True)
 cursor_volume = modal.Volume.from_name("cursor-volume", create_if_missing=True)
 
 # Necessary for git pushes to work from the remote machine
@@ -18,13 +18,13 @@ local_users_git_email = subprocess.check_output(["git", "config", "--global", "u
 
 
 MODAL_VOLUMES: dict[str | PurePosixPath, modal.Volume] = {
-    "/nvs-leaderboard-data": nvs_leaderboard_data_volume,
-    "/nvs-leaderboard-output": nvs_leaderboard_output_volume,
+    "/nvs-bench-data": nvs_bench_data_volume,
+    "/nvs-bench-output": nvs_bench_output_volume,
     "/root/.cursor-server": cursor_volume,
 }
 
 app = modal.App(
-    "nvs-leaderboard-" + Path.cwd().name,
+    "nvs-bench-" + Path.cwd().name,
     image=(
         # If you've already got a Dockerfile, just replace image with:
         # modal.Image.from_dockerfile("Dockerfile")
@@ -56,9 +56,9 @@ app = modal.App(
 )
 def run(scene: str):
     # Kind of silly but modal requires reload/commit to avoid race conditions while using volumes
-    nvs_leaderboard_data_volume.reload()
-    os.system(f"bash nvs_leaderboard_eval.sh {scene}")
-    nvs_leaderboard_output_volume.commit()
+    nvs_bench_data_volume.reload()
+    os.system(f"bash nvs_bench_eval.sh {scene}")
+    nvs_bench_output_volume.commit()
 
 
 ###### Dev Server ######

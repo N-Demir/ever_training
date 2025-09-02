@@ -14,32 +14,32 @@ fi
 
 scene=$1
 
-expected_output_folder="/nvs-leaderboard-output/$scene/$method_name/test_renders"
+expected_output_folder="/nvs-bench-output/$scene/$method_name/test_renders"
 
 # Remove the output folder if it already exists
-rm -rf /nvs-leaderboard-output/$scene/$method_name
+rm -rf /nvs-bench-output/$scene/$method_name
 
 # Record start time
 start_time=$(date +%s)
 
 ######## START OF YOUR CODE ########
 # Train using the train split in the dataset folder
-# eg: python train.py --data /nvs-leaderboard-data/$scene --output /nvs-leaderboard-output/$scene/$method_name/
+# eg: python train.py --data /nvs-bench-data/$scene --output /nvs-bench-output/$scene/$method_name/
 
 # TODO: For zipnerf/alameda, should use GLO args to be comparable to zipnerf
-/opt/conda/bin/conda run -n ever python train.py -s /nvs-leaderboard-data/$scene -m /nvs-leaderboard-output/$scene/$method_name/ --eval --test_iterations -1
+/opt/conda/bin/conda run -n ever python train.py -s /nvs-bench-data/$scene -m /nvs-bench-output/$scene/$method_name/ --eval --test_iterations -1
 
 # Render the test split
-# eg: python render.py --data /nvs-leaderboard-data/$scene --output /nvs-leaderboard-output/$scene/$method_name/ 
+# eg: python render.py --data /nvs-bench-data/$scene --output /nvs-bench-output/$scene/$method_name/ 
 
-/opt/conda/bin/conda run -n ever python render.py -s /nvs-leaderboard-data/$scene -m /nvs-leaderboard-output/$scene/$method_name/ --eval --iteration 30000
+/opt/conda/bin/conda run -n ever python render.py -s /nvs-bench-data/$scene -m /nvs-bench-output/$scene/$method_name/ --eval --iteration 30000
 
 # At the end, move your renders into the `expected_output_folder`
-# eg: mv /nvs-leaderboard-output/$scene/$method_name/test/ours_30000/renders $expected_output_folder
+# eg: mv /nvs-bench-output/$scene/$method_name/test/ours_30000/renders $expected_output_folder
 
-mv /nvs-leaderboard-output/$scene/$method_name/test/ours_30000/renders $expected_output_folder
+mv /nvs-bench-output/$scene/$method_name/test/ours_30000/renders $expected_output_folder
 ######## END OF YOUR CODE ########
 
 # Record end time and show duration
 end_time=$(date +%s)
-echo $((end_time - start_time)) > /nvs-leaderboard-output/$scene/$method_name/training_time.txt
+echo $((end_time - start_time)) > /nvs-bench-output/$scene/$method_name/time.txt
