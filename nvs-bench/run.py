@@ -54,7 +54,7 @@ def eval(data: str):
 
     # Download from gcs (noop if already exists)
     os.system(f"mkdir -p /nvs-bench/data/{data}/")
-    os.system(f"gsutil -m rsync -r -d gs://nvs-bench/data/{data} /nvs-bench/data/{data}")
+    os.system(f"gsutil -m rsync -r gs://nvs-bench/data/{data} /nvs-bench/data/{data}")
 
     # Clean output folder
     shutil.rmtree(output_folder, ignore_errors=True)
